@@ -1,0 +1,3 @@
+// Fallback before the per-user defaults service runs.
+include "/usr/share/barusu/zdots/system/niri/barusu.kdl"
+include "/usr/share/barusu/zdots/dot_config/niri/dms/binds.kdl"

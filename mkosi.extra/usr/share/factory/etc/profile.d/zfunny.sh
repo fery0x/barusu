@@ -1,1 +1,1 @@
-alias run67='run0'
+# Retired compatibility target for existing /etc/profile.d symlinks.

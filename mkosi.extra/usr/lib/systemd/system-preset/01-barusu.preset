@@ -1,0 +1,15 @@
+disable sshd.service
+disable sshd.socket
+disable systemd-timesyncd.service
+enable auditd.service
+enable firewalld.service
+enable flatpak-add-flathub-repos.service
+enable greetd.service
+enable ntpd-rs.service
+enable systemd-resolved.service
+enable NetworkManager.service
+enable NetworkManager-wait-online.service
+enable bluetooth.service
+disable uupd.timer
+disable flatpak-preinstall.service
+disable cardwired.service

@@ -1,14 +1,6 @@
-image := env("IMAGE_FULL", "localhost/zirconium:latest")
-image_name := "zirconium"
+image := env("IMAGE_FULL", "localhost/barusu:latest")
+image_name := "barusu"
 filesystem := env("BUILD_FILESYSTEM", "btrfs")
-
-iterate-sysupdate $IMAGE_NAME=image_name:
-    #!/usr/bin/env bash
-    set -xeuo pipefail
-    just build-sysupdate
-    LATEST_IMAGE="$(find mkosi.output -iname "${IMAGE_NAME^}_*_$(uname -m | tr '_' '-').raw" | tail -n-1)"
-    qemu-img resize "${LATEST_IMAGE}" +40G
-    vmbuddy -f "${LATEST_IMAGE}"
 
 iterate-bootc:
     #!/usr/bin/env bash
@@ -23,21 +15,20 @@ iterate-bootc:
 build: build-ostree
 
 build-ostree:
-    mkosi -B --debug-shell --profile=base,base-desktop,bootc-ostree,brew,zirconium-bootc-ostree
-
-build-sysupdate:
-    mkosi -B --debug-shell --profile=base,base-desktop,sysupdate,brew,base
-
-build-iso:
-    mkosi -B --debug --profile=iso
+    mkosi -B --debug-shell --profile=base,base-desktop,bootc-ostree,brew,barusu-bootc-ostree
 
 lint:
     podman run --rm -it --entrypoint=bootc {{ image }} container lint
 
 load:
     #!/usr/bin/env bash
-    set -x
-    podman load -i "$(find mkosi.output/* -maxdepth 0 -type d -printf "%T@ ,%p\n" -iname "_*" -print0 | sort -n | head -n1 | cut -d, -f2)" -q | cut -d: -f3 | xargs -I{} podman tag {} {{image}}
+    set -euo pipefail
+    archive="$(find mkosi.output -type f -name index.json -printf '%h\n' | sort | tail -n 1)"
+    test -n "$archive"
+    result="$(podman load -i "$archive")"
+    loaded="$(sed -nE 's/^Loaded image(\(s\))?: //p' <<< "$result" | tail -n 1)"
+    test -n "$loaded"
+    podman tag "$loaded" "{{image}}"
 
 bootc *ARGS:
     podman run \

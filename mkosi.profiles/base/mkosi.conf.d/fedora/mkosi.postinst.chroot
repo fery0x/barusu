@@ -2,10 +2,7 @@
 
 set -xeuo pipefail
 
-# For rootless podman
-chmod 0755 /usr/bin/newuidmap /usr/bin/newgidmap
-chmod u-s /usr/bin/newuidmap
-chmod u-s /usr/bin/newgidmap
+# Preserve the RPM-provided permissions/capabilities of newuidmap and newgidmap.
 
 printf "\n%s\n" "store-root=/etc/selinux" | tee -a /etc/selinux/semanage.conf
 

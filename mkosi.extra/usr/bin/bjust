@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec /usr/bin/just --justfile /usr/share/barusu/just/00-system.just "$@"

@@ -1,0 +1,230 @@
+{
+  "scope": "Explicit declaration delta against original Zirconium; paths normalized to Barusu. Not a resolved dependency manifest.",
+  "changes": {
+    "mkosi.conf.d/fedora/mkosi.conf.d/barusu.conf": {
+      "removed": [
+        "btop",
+        "cava",
+        "distrobox",
+        "fastfetch",
+        "foot",
+        "fzf",
+        "glycin-thumbnailer",
+        "gnome-disk-utility",
+        "gst-thumbnailers",
+        "hyfetch",
+        "input-remapper",
+        "kanshi",
+        "kf6-kirigami",
+        "kf6-qqc2-desktop-style",
+        "khal",
+        "lshw",
+        "nano-default-editor",
+        "nautilus",
+        "nautilus-python",
+        "nm-connection-editor",
+        "pamu2fcfg",
+        "plasma-breeze",
+        "tailscale",
+        "tesseract",
+        "wev",
+        "wl-mirror",
+        "wtype",
+        "ykman"
+      ],
+      "added": []
+    },
+    "mkosi.conf.d/fedora/mkosi.conf.d/dms.conf": {
+      "removed": [],
+      "added": [
+        "matugen"
+      ]
+    },
+    "mkosi.conf.d/fedora/mkosi.conf.d/kmscon.conf": {
+      "removed": [
+        "kmscon-freetype",
+        "kmscon-gl",
+        "kmscon-pango"
+      ],
+      "added": []
+    },
+    "mkosi.conf.d/fedora/mkosi.conf.d/terra.conf": {
+      "removed": [
+        "cardwire",
+        "cardwire-gui",
+        "maple-fonts",
+        "satty",
+        "valent",
+        "xdg-terminal-exec-nautilus"
+      ],
+      "added": [
+        "ghostty"
+      ]
+    },
+    "mkosi.profiles/base-desktop/mkosi.conf.d/fedora/mkosi.conf.d/base-desktop.conf": {
+      "removed": [
+        "@base-graphical",
+        "ibus",
+        "libcamera-tools",
+        "libimobiledevice-utils",
+        "rsync",
+        "uxplay"
+      ],
+      "added": [
+        "NetworkManager",
+        "adwaita-icon-theme",
+        "bluez",
+        "dbus-broker",
+        "firewalld",
+        "fwupd",
+        "gsettings-desktop-schemas",
+        "mesa-dri-drivers",
+        "mesa-libEGL",
+        "mesa-libGL",
+        "mesa-libgbm",
+        "mesa-vulkan-drivers",
+        "pipewire-alsa",
+        "pipewire-pulseaudio",
+        "plymouth",
+        "plymouth-system-theme",
+        "upower",
+        "xdg-utils"
+      ]
+    },
+    "mkosi.profiles/base-desktop/mkosi.conf.d/fedora/mkosi.conf.d/x86-64.conf": {
+      "removed": [
+        "powerstat"
+      ],
+      "added": []
+    },
+    "mkosi.profiles/base/mkosi.conf.d/fedora/mkosi.conf.d/base.conf": {
+      "removed": [
+        "@standard",
+        "lsof",
+        "socat",
+        "stalld"
+      ],
+      "added": [
+        "audit",
+        "authselect",
+        "bash-completion",
+        "ca-certificates",
+        "curl",
+        "file",
+        "fuse-overlayfs",
+        "passt",
+        "procps-ng",
+        "selinux-policy-targeted",
+        "shadow-utils",
+        "shadow-utils-subid",
+        "sudo",
+        "systemd-resolved",
+        "util-linux",
+        "zram-generator-defaults"
+      ]
+    },
+    "mkosi.profiles/bootc-ostree/mkosi.conf.d/fedora/mkosi.conf.d/extra.conf": {
+      "removed": [
+        "uupd"
+      ],
+      "added": []
+    },
+    "mkosi.profiles/brew/mkosi.conf.d/fedora.conf": {
+      "removed": [],
+      "added": [
+        "gcc-c++",
+        "make",
+        "patch"
+      ]
+    },
+    "mkosi.profiles/jackrabbit/mkosi.conf.d/fedora/mkosi.conf.d/fedora.conf": {
+      "removed": [
+        "alsa-ucm",
+        "mangohud",
+        "vulkan-tools",
+        "waydroid"
+      ],
+      "added": []
+    },
+    "mkosi.profiles/jackrabbit/mkosi.conf.d/fedora/mkosi.conf.d/lizardbyte-beta.conf": {
+      "removed": [
+        "Sunshine"
+      ],
+      "added": []
+    },
+    "mkosi.profiles/jackrabbit/mkosi.conf.d/fedora/mkosi.conf.d/terra-extras.conf": {
+      "removed": [
+        "terra-gamescope"
+      ],
+      "added": []
+    },
+    "mkosi.profiles/jackrabbit/mkosi.conf.d/fedora/mkosi.conf.d/terra-mesa.conf": {
+      "removed": [
+        "mesa-dri-drivers",
+        "mesa-filesystem",
+        "mesa-libEGL",
+        "mesa-libGL",
+        "mesa-libgbm",
+        "mesa-vulkan-drivers"
+      ],
+      "added": []
+    },
+    "mkosi.profiles/jackrabbit/mkosi.conf.d/fedora/mkosi.conf.d/terra.conf": {
+      "removed": [
+        "ScopeBuddy",
+        "asusctl",
+        "dkms-xonedo-nightly",
+        "gamescope-session-plus",
+        "gamescope-session-steam",
+        "inputplumber",
+        "powerbuttond",
+        "powerstation",
+        "scx-scheds",
+        "scx-tools",
+        "steam",
+        "steam-notif-daemon",
+        "steamos-manager",
+        "steamos-manager-gamescope-session-plus",
+        "umu-launcher"
+      ],
+      "added": []
+    },
+    "mkosi.profiles/liveiso-bootc-ostree/mkosi.conf.d/fedora/mkosi.conf.d/aarch64.conf": {
+      "removed": [
+        "grub2-efi-aa64-modules"
+      ],
+      "added": []
+    },
+    "mkosi.profiles/liveiso-bootc-ostree/mkosi.conf.d/fedora/mkosi.conf.d/base.conf": {
+      "removed": [
+        "bootc",
+        "dracut-live",
+        "fuse-overlayfs",
+        "livesys-scripts",
+        "readymade",
+        "skopeo",
+        "systemd-boot-unsigned"
+      ],
+      "added": []
+    },
+    "mkosi.profiles/liveiso-bootc-ostree/mkosi.conf.d/fedora/mkosi.conf.d/x86-64.conf": {
+      "removed": [
+        "grub2-efi-x64-cdboot"
+      ],
+      "added": []
+    },
+    "mkosi.profiles/nvidia/mkosi.conf.d/fedora/mkosi.conf.d/negativo-nvidia.conf": {
+      "removed": [
+        "nvidia-settings"
+      ],
+      "added": []
+    },
+    "mkosi.profiles/sysupdate/mkosi.conf.d/fedora/mkosi.conf": {
+      "removed": [
+        "systemd-boot-unsigned",
+        "systemd-container"
+      ],
+      "added": []
+    }
+  }
+}

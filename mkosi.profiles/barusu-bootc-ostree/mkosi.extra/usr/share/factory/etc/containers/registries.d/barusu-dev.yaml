@@ -1,0 +1,5 @@
+docker:
+  ghcr.io/REPLACE_OWNER/barusu:
+    use-sigstore-attachments: true
+  ghcr.io/REPLACE_OWNER/barusu-nvidia:
+    use-sigstore-attachments: true

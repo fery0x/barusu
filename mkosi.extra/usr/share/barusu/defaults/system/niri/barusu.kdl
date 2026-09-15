@@ -1,0 +1,2 @@
+// Compatibility with user entrypoints from the first minimal archive.
+include "/usr/share/barusu/zdots/system/niri/barusu.kdl"

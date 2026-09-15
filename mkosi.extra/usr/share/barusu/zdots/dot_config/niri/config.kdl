@@ -1,0 +1,4 @@
+// Image defaults; put personal overrides in local.kdl.
+include "/usr/share/barusu/zdots/system/niri/barusu.kdl"
+include "dms.kdl"
+include optional=true "local.kdl"

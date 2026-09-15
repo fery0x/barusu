@@ -5,55 +5,44 @@ install -Dpm0644 -t /usr/share/flatpak/remotes.d/ "$SRCDIR/cache/flathub.flatpak
 
 niri --version | grep -i -E "niri [[:digit:]]*\.[[:digit:]]*"
 
-install -d /usr/share/zirconium/
+install -d /usr/share/barusu/
 sed --sandbox -i -e '/gnome_keyring.so/ s/-auth/auth/ ; /gnome_keyring.so/ s/-session/session/' /etc/pam.d/greetd
-install -d /usr/share/bash-completion/completions /usr/share/zsh/site-functions /usr/share/fish/vendor_completions.d/
-just --completions bash | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/bash-completion/completions/zjust
-just --completions zsh | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/zsh/site-functions/_zjust
-just --completions fish | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/fish/vendor_completions.d/zjust.fish
-
 fc-cache --force --really-force --system-only --verbose # recreate font-cache to pick up the added fonts
 
 # These files NEED to be on the image.
 grep -F -e "Comment=Central repository of Flatpak applications" /usr/share/flatpak/remotes.d/flathub.flatpakrepo
 stat /usr/share/flatpak/remotes.d/flathub.flatpakrepo
-stat /usr/bin/luks*tpm*
-stat /usr/share/zirconium/just/00-start.just
-# Not yet, needs a lot of fixes for sysupdate version
-# stat /usr/bin/taidan
-# stat /usr/lib/systemd/system/taidan*.service
 
+for binary in bjust gum chezmoi just niri dms dms-greeter ghostty greetd flatpak podman wpctl playerctl brightnessctl; do
+    command -v "$binary"
+done
+stat /usr/share/applications/com.mitchellh.ghostty.desktop
+niri validate -c /usr/share/barusu/zdots/dot_config/niri/config.kdl
+just --justfile /usr/share/barusu/just/00-system.just --summary
+systemctl set-default graphical.target
+install -d /usr/share/barusu/build-info
+rpm -qa --qf '%{NAME}\t%{VERSION}-%{RELEASE}\t%{ARCH}\n' | sort > /usr/share/barusu/build-info/packages.tsv
 ln -s fedora-release /usr/lib/system-release
 
 
 (
     . /usr/lib/os-release
-    IMAGE_NAME="zirconium"
-    HOME_URL="https://github.com/zirconium-dev/zirconium"
-
-    tee /usr/lib/os-release <<EOF
-NAME="${IMAGE_NAME^}"
-ID="${IMAGE_NAME}"
-ID_LIKE="$ID"
-PRETTY_NAME="${IMAGE_NAME^}"
-FANCY_NAME="\033[0;38:2:252:186:3;1;49m⸭\033[0;38:2:252:186:3;49m ${IMAGE_NAME^} \033[0m"
+    PROJECT_URL=""
+    if [ -f /usr/share/barusu/project-url ]; then
+        PROJECT_URL="$(cat /usr/share/barusu/project-url)"
+    fi
+    cat > /usr/lib/os-release <<EOF
+NAME="Barusu"
+ID=barusu
+ID_LIKE=fedora
+PRETTY_NAME="Barusu"
 VERSION="$VERSION"
 VERSION_ID="$VERSION_ID"
-VERSION_CODENAME="Pibble"
-ANSI_COLOR="38:2:252:186:3;1;49"
-ANSI_COLOR_REVERSE="48;2;252;186;3;1;30"
-LOGO="${IMAGE_NAME}"
-HOME_URL="${HOME_URL}"
-BUG_REPORT_URL="${HOME_URL}/issues"
-SUPPORT_URL=\"${HOME_URL}/issues
-CPE_NAME="cpe:/o:${IMAGE_NAME}-dev:${IMAGE_NAME}"
-DOCUMENTATION_URL="${HOME_URL}"
-DEFAULT_HOSTNAME="${IMAGE_NAME}-????-????"
+ANSI_COLOR="0;36"
+LOGO=fedora-logo-icon
+HOME_URL="$PROJECT_URL"
+DOCUMENTATION_URL="$PROJECT_URL"
+DEFAULT_HOSTNAME=barusu
 EOF
-
-    tee /usr/lib/issue <<EOF
-\e[0;38:2:252:186:3;1;49m▒\e[0m \e[0;38:2:252:186:3;1;49m⸭\e[0;38:2:252:186:3;49m ${IMAGE_NAME^} \e[0m
-\e[0;38:2:252:186:3;1;49m▒\e[0m Kernel \r on an \m (\l)
-
-EOF
+    printf 'Barusu\nKernel \\r on an \\m (\\l)\n' > /usr/lib/issue
 )

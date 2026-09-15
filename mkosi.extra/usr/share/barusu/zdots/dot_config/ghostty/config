@@ -1,0 +1,3 @@
+# DMS may generate this theme after the first session starts.
+# Optional include allows the first terminal to open before generation completes.
+config-file = ?themes/danktheme

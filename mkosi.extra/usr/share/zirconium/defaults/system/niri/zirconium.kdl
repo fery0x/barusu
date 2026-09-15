@@ -1,0 +1,2 @@
+// Compatibility entrypoint for existing user configurations.
+include "/usr/share/barusu/zdots/system/niri/barusu.kdl"

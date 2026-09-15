@@ -1,3 +1,1 @@
-#!/usr/bin/env bash
-
-/usr/bin/zmotd
+# Retired compatibility target for existing /etc/profile.d symlinks.
