@@ -36,6 +36,9 @@ on:
         required: false
         type: string
     secrets:
+      SIGNING_PASSWORD:
+        description: "Password for the signing private key"
+        required: false
       SIGNING_SECRET:
         description: "The private key used to sign the image"
         required: false
@@ -159,11 +162,15 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           SIGNING_SECRET: ${{ secrets.SIGNING_SECRET }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
         run: |
           set -euo pipefail
           PRIVATE_KEY_FILE="$(mktemp)"
           echo "${SIGNING_SECRET}" > "${PRIVATE_KEY_FILE}"
-          trap 'rm -f $PRIVATE_KEY_FILE' EXIT
+          PASSWORD_FILE=""
+          trap 'rm -f "$PRIVATE_KEY_FILE" "${PASSWORD_FILE:-}"' EXIT
+          PASSWORD_FILE="$(mktemp)"
+          printf '%s' "$SIGNING_PASSWORD" > "$PASSWORD_FILE"
           sudo mkdir -p "/etc/containers/registries.d/"
           echo -e "docker:\n  ${IMAGE_REGISTRY}:\n    use-sigstore-attachments: true" | sudo tee "/etc/containers/registries.d/${REPOSITORY_OWNER}.yaml"
 
@@ -171,7 +178,7 @@ jobs:
           # HACK: push two times so layer annotations are present
           # TODO: remove me when https://github.com/containers/podman/issues/27796 fixed
           for _ in $(seq 2); do
-            podman push --retry "${MAX_RETRIES}" --compression-format=zstd --digestfile="${DIGESTFILE}" "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" "--sign-passphrase-file=/dev/null" "--sign-by-sigstore-private-key=${PRIVATE_KEY_FILE}"
+            podman push --retry "${MAX_RETRIES}" --compression-format=zstd --digestfile="${DIGESTFILE}" "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" "--sign-passphrase-file=${PASSWORD_FILE}" "--sign-by-sigstore-private-key=${PRIVATE_KEY_FILE}"
           done
           echo "remote_image_digest=$(< "${DIGESTFILE}")" | tee "${GITHUB_OUTPUT}"
 
@@ -299,6 +306,7 @@ jobs:
         if: inputs.publish
         env:
           SIGNING_SECRET: ${{ secrets.SIGNING_SECRET }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
           LABELS: ${{ steps.metadata.outputs.labels }}
           TAGS: ${{ steps.metadata.outputs.tags }}
         run: |
@@ -306,7 +314,10 @@ jobs:
 
           PRIVATE_KEY_FILE="$(mktemp)"
           echo "${SIGNING_SECRET}" > "${PRIVATE_KEY_FILE}"
-          trap 'rm -f $PRIVATE_KEY_FILE' EXIT
+          PASSWORD_FILE=""
+          trap 'rm -f "$PRIVATE_KEY_FILE" "${PASSWORD_FILE:-}"' EXIT
+          PASSWORD_FILE="$(mktemp)"
+          printf '%s' "$SIGNING_PASSWORD" > "$PASSWORD_FILE"
           sudo mkdir -p "/etc/containers/registries.d/"
           echo -e "docker:\n  ${IMAGE_REGISTRY}:\n    use-sigstore-attachments: true" | sudo tee "/etc/containers/registries.d/${REPOSITORY_OWNER}.yaml"
 
@@ -333,7 +344,7 @@ jobs:
             # TODO: remove me when https://github.com/containers/podman/issues/27796 fixed
             for _ in $(seq 2); do
               while IFS= read -r TAG; do
-                podman manifest push --all=false --compression-format=zstd "${TARGET_MANIFEST}" "${TARGET_MANIFEST}:${TAG}" "--sign-passphrase-file=/dev/null" "--sign-by-sigstore-private-key=${PRIVATE_KEY_FILE}"
+                podman manifest push --all=false --compression-format=zstd "${TARGET_MANIFEST}" "${TARGET_MANIFEST}:${TAG}" "--sign-passphrase-file=${PASSWORD_FILE}" "--sign-by-sigstore-private-key=${PRIVATE_KEY_FILE}"
               done <<< "${TAGS}"
             done
           done
