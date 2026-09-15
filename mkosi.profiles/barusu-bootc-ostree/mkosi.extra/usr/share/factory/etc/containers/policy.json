@@ -25,7 +25,7 @@
                     "type": "insecureAcceptAnything"
                 }
             ],
-            "ghcr.io/REPLACE_OWNER/barusu": [
+            "ghcr.io/fery0x/barusu": [
                 {
                     "type": "sigstoreSigned",
                     "keyPaths": [
@@ -36,7 +36,7 @@
                     }
                 }
             ],
-            "ghcr.io/REPLACE_OWNER/barusu-nvidia": [
+            "ghcr.io/fery0x/barusu-nvidia": [
                 {
                     "type": "sigstoreSigned",
                     "keyPaths": [

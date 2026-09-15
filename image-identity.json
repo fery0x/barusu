@@ -1,0 +1,5 @@
+{
+  "repository": "fery0x/barusu",
+  "image": "ghcr.io/fery0x/barusu:latest",
+  "nvidia_image": "ghcr.io/fery0x/barusu-nvidia:latest"
+}

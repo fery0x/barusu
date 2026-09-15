@@ -182,7 +182,7 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
           DIGEST: ${{ steps.push.outputs.remote_image_digest }}
         run: |
-          set -x
+          set -euo pipefail
           mkdir -p /tmp/outputs/digests
           echo "${DIGEST}" | tee "/tmp/outputs/digests/${IMAGE_NAME}-${PLATFORM}.txt"
 
@@ -302,7 +302,7 @@ jobs:
           LABELS: ${{ steps.metadata.outputs.labels }}
           TAGS: ${{ steps.metadata.outputs.tags }}
         run: |
-          set -x
+          set -euo pipefail
 
           PRIVATE_KEY_FILE="$(mktemp)"
           echo "${SIGNING_SECRET}" > "${PRIVATE_KEY_FILE}"

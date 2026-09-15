@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-
-set -xeuo pipefail
-
+set -euo pipefail
 stat /usr/share/pki/containers/barusu.pub
-grep -F -e "ghcr.io/REPLACE_OWNER/barusu" /usr/share/factory/etc/containers/policy.json
+grep -F -e "ghcr.io/fery0x/barusu" /usr/share/factory/etc/containers/policy.json
