@@ -7,6 +7,7 @@ on:
 
 jobs:
   build_release:
+    if: vars.BARUSU_PUBLISH == 'true'
     name: Build and release disk image
     permissions:
       contents: read
@@ -29,12 +30,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          submodules: true
+          submodules: false
+
+      - name: Verify installer identity
+        run: python3 scripts/configure-image.py "$GITHUB_REPOSITORY" --check
 
       - name: Build ISO
         id: build-iso
         env:
-          TARGET_IMAGE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}${{ matrix.flavor }}:latest
+          TARGET_IMAGE: ghcr.io/${{ github.repository_owner }}/barusu${{ matrix.flavor }}:latest
           TARGET_CONFIG: ${{ matrix.flavor == '-nvidia' && './iso-nvidia.toml' || './iso.toml' }}
         run: |
           sudo podman pull "${TARGET_IMAGE}"
@@ -57,44 +61,22 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: ${{ github.event.repository.name }}${{ matrix.flavor }}-${{ matrix.platform }}
+          name: barusu${{ matrix.flavor }}-${{ matrix.platform }}
           path: ${{ steps.build-iso.outputs.output-directory }}
           if-no-files-found: error
           retention-days: 0
           compression-level: 0
           overwrite: true
 
-      - name: Brand ISOs
+      - name: Name installer artifacts
         env:
           FLAVOR: ${{ matrix.flavor }}
           PLATFORM: ${{ matrix.platform }}
-          IMAGE_NAME: "${{ github.event.repository.name }}"
           SOURCE_DIR: ${{ steps.build-iso.outputs.output-directory }}
         run: |
-          sudo mv "${SOURCE_DIR}"/*/*.iso "${SOURCE_DIR}/zirc-unbranded.iso"
-          sudo podman rmi -a -f
-          podman rmi -a -f
-          sudo podman run \
-            --rm \
-            -it \
-            --pull=newer \
-            --privileged \
-            -v /dev:/dev \
-            -v "${SOURCE_DIR}:/output" \
-            -v ./assets/iso:/iso \
-            registry.fedoraproject.org/fedora:latest \
-            bash -c 'dnf install -y lorax \
-            && mkdir /images \
-            && cd /iso/product && find . | cpio -c -o | gzip -9cv > /images/product.img && cd / \
-            && mkksiso \
-                --add /images \
-                --volid zirconium-boot \
-                --replace "vmlinuz" "vmlinuz inst.resolution=1280x800" \
-                /output/zirc-unbranded.iso \
-                /output/zirc.iso'
-          sudo mv "${SOURCE_DIR}"/zirc.iso "${SOURCE_DIR}/${IMAGE_NAME}${FLAVOR}-${PLATFORM}.iso"
-          (cd ${SOURCE_DIR} && sha256sum "${IMAGE_NAME}${FLAVOR}-${PLATFORM}.iso" | sudo tee "${IMAGE_NAME}${FLAVOR}-${PLATFORM}.iso-CHECKSUM")
-          sudo rm -f "${SOURCE_DIR}/zirc-unbranded.iso"
+          set -euo pipefail
+          sudo mv "${SOURCE_DIR}"/*/*.iso "${SOURCE_DIR}/barusu${FLAVOR}-${PLATFORM}.iso"
+          (cd "${SOURCE_DIR}" && sha256sum "barusu${FLAVOR}-${PLATFORM}.iso" | sudo tee "barusu${FLAVOR}-${PLATFORM}.iso-CHECKSUM")
 
       - name: Upload to S3
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)

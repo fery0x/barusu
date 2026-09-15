@@ -45,7 +45,6 @@ env:
   IMAGE_DESC: "Opinionated niri + bootc image"
   IMAGE_KEYWORDS: "bootc,niri"
   IMAGE_LICENSE: AGPL-2.0
-  IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/237492973?s=400&v=4"
   IMAGE_NAME: "${{ inputs.image-name }}"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
 
@@ -89,7 +88,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          submodules: true
+          submodules: false
+
+      - name: Validate minimal source
+        run: |
+          python3 scripts/validate-source.py
+          python3 -m unittest discover -s tests -v
+
+      - name: Verify publishing identity
+        if: inputs.publish
+        run: python3 scripts/configure-image.py "$GITHUB_REPOSITORY" --check
 
       - name: Install mkosi
         uses: systemd/mkosi@9539f1771a328054df1b1e6138bee4a46ce89b83 # main
@@ -108,12 +116,16 @@ jobs:
           IMAGE_FULL: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -e
+          set -euo pipefail
           RELEASE_ARGUMENTS=()
           if [ "$CI_MKOSI_RELEASE" != "" ] ; then
             RELEASE_ARGUMENTS+=("--release=$CI_MKOSI_RELEASE")
           fi
-          sudo mkosi -B -ff --debug --profile=base,base-desktop,bootc-ostree,brew,zirconium-bootc-ostree,${CI_MKOSI_PROFILES} ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS} --environment=GITHUB_TOKEN=${GITHUB_TOKEN}
+          PROFILES="base,base-desktop,bootc-ostree,brew,barusu-bootc-ostree"
+          if [ -n "$CI_MKOSI_PROFILES" ]; then
+            PROFILES+=",${CI_MKOSI_PROFILES}"
+          fi
+          sudo mkosi -B -ff --debug "--profile=$PROFILES" "${RELEASE_ARGUMENTS[@]}" "--environment=GITHUB_TOKEN=${GITHUB_TOKEN}"
 
       - name: Load image
         id: load
@@ -148,7 +160,7 @@ jobs:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           SIGNING_SECRET: ${{ secrets.SIGNING_SECRET }}
         run: |
-          set -x
+          set -euo pipefail
           PRIVATE_KEY_FILE="$(mktemp)"
           echo "${SIGNING_SECRET}" > "${PRIVATE_KEY_FILE}"
           trap 'rm -f $PRIVATE_KEY_FILE' EXIT
@@ -254,7 +266,6 @@ jobs:
             io.artifacthub.package.deprecated=false
             io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
             io.artifacthub.package.license=${{ env.IMAGE_LICENSE }}
-            io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
             io.artifacthub.package.prerelease=false
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
