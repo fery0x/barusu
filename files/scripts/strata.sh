@@ -11,7 +11,7 @@ API="https://api.github.com/repos/${REPO}/releases/latest"
 
 abort() { echo "strata: $*" >&2; exit 1; }
 
-# ---------- one API call: tag + full inventory (kind to the 60/hr limit) ----------
+# ---------- one API call: tag + full inventory ----------
 BODY=$(curl -fsSL --retry 3 -H "Accept: application/vnd.github+json" "$API") \
   || abort "GitHub API unreachable (rate limit? try later)"
 [ -n "$BODY" ] || abort "GitHub API answered empty"
@@ -25,7 +25,7 @@ ASSETS=$(printf '%s\n' "$BODY" | grep -o '"browser_download_url":[[:space:]]*"[^
 echo "strata: inventory:"
 printf '%s\n' "$ASSETS" | sed 's/^/strata:   - /'
 
-# ---------- candidate: x86_64 family; symbols/metadata excluded (.debug!) ----------
+# ---------- candidate: x86_64 family; symbols/sidecars excluded ----------
 X86=$(printf '%s\n' "$ASSETS" \
       | grep -Ei '(x86_64|amd64)' \
       | grep -Eiv '\.(debug|sha256|sha512|sig|asc|json|sbom|pem|txt|md)$') || true
@@ -39,17 +39,20 @@ ASSET=$(printf '%s\n' "$X86" | grep -Ei '\.(tar\.zst|tar\.xz|tar\.gz|tgz|tar\.bz
 [ -n "$ASSET" ] || abort "nothing selectable (see inventory)"
 echo "strata: selected $ASSET"
 
-# ---------- trust lane: sha256 sidecar if published (installer's written proof) ------
+# ---------- download + TRUST LANE (compare-hashes method; filename-immune) ----------
 curl -fsSL --retry 3 -o "$TMP/artifact" "$ASSET" || abort "download failed: $ASSET"
 if curl -fsSL --retry 3 -o "$TMP/artifact.sha256" "${ASSET}.sha256" 2>/dev/null; then
-  ( cd "$TMP" && sha256sum -c artifact.sha256 >/dev/null ) \
-    || abort "sidecar digest MISMATCH — refusing mystery bytes"
-  echo "strata: sidecar digest OK"
+  EXPECTED=$(cut -d' ' -f1 "$TMP/artifact.sha256" | head -n1)
+  ACTUAL=$(sha256sum "$TMP/artifact" | cut -d' ' -f1)
+  case "${EXPECTED:-}" in
+    "$ACTUAL") echo "strata: sidecar digest OK ($ACTUAL)" ;;
+    *) abort "sidecar digest MISMATCH — expected ${EXPECTED:-<empty>}, got $ACTUAL" ;;
+  esac
 else
   echo "strata: no sidecar published — proceeding, but the gap is NAMED"
 fi
 
-# ---------- extraction (tar family / deb / plain) ------------------------------------
+# ---------- extraction ----------
 case "$ASSET" in
   *.tar*) tar -xf "$TMP/artifact" -C "$TMP" ;;
   *.deb)  if command -v dpkg-deb >/dev/null 2>&1; then
@@ -60,7 +63,7 @@ case "$ASSET" in
   *)      cp "$TMP/artifact" "$TMP/strata"; chmod 0755 "$TMP/strata" ;;
 esac
 
-# ---------- furniture receipts: what actually shipped inside --------------------------
+# ---------- furniture receipts ----------
 echo "strata: furniture:"
 find "$TMP" -maxdepth 3 \( -iname '*.desktop' -o -ipath '*dbus*' -o -iname '*strata*' \) -print \
   | sed 's/^/strata:   /'
@@ -74,7 +77,6 @@ install -m 0755 "$BINPATH" "$BIN"
 echo "strata: rehomed $BIN"
 sha256sum "$BIN" | sed 's/^/strata:   /'
 
-# ---------- BUILD_INFO: the receipt card (tag + UTC build date) -----------------------
 printf 'TAG=%s\nBUILD_DATE=%s\n' "$TAG" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" > "$DOC/BUILD_INFO"
 cp /etc/os-release "$DOC/os-release"
 rm -rf "$TMP"
