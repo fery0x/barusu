@@ -41,11 +41,11 @@ modules:
     scripts:
       - strata.sh
 
-  # CLI lane — the TOOL per docs (brewfile: optional, omitted; apps = user's call)
+  # CLI lane — the TOOL only; apps are your call at runtime
   - type: brew
 
   # GUI lane — Flathub enabled, nothing prechosen
-  - type: default-flatpak
+  - type: default-flatpaks
     notify: false
     remove: []
     install: []
