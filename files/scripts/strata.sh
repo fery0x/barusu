@@ -1,61 +1,81 @@
-#!/usr/bin/env bash
-set -euo pipefail
-# barusu :: strata installer — channel: latest release
-# digest-checked against upstream sidecar when one is published,
-# receipts written to build log + /usr/share/doc/strata/BUILD_INFO
+#!/bin/sh
+# strata bootstrap :: fetch → verify → rehome at image build (barusu)
+# Single third-party source, no COPRs, no mystery binaries. Receipts or silence.
+set -eu
 
 REPO="lgse/strata"
+PREF="/usr/local"
+BIN="${PREF}/bin/strata"
+DOC="/usr/share/doc/strata"
 API="https://api.github.com/repos/${REPO}/releases/latest"
 
-# --- resolve latest release -------------------------------------------------
-RELEASE_JSON=$(curl -fsSL "$API")
-TAG=$(echo "$RELEASE_JSON" | grep -m1 '"tag_name"' | cut -d'"' -f4)
+abort() { echo "strata: $*" >&2; exit 1; }
 
-ASSET_URL=$(echo "$RELEASE_JSON" | grep browser_download_url | \
-            grep -E 'x86_64|amd64' | grep -Ev 'sha256|sig' | head -1 | cut -d'"' -f4)
+# ---------- one API call: tag + full inventory (kind to the 60/hr limit) ----------
+BODY=$(curl -fsSL --retry 3 -H "Accept: application/vnd.github+json" "$API") \
+  || abort "GitHub API unreachable (rate limit? try later)"
+[ -n "$BODY" ] || abort "GitHub API answered empty"
 
-[ -n "$ASSET_URL" ] || { echo "strata: no x86_64 asset in $TAG"; exit 1; }
+TAG=$(printf '%s\n' "$BODY" | grep -o '"tag_name":[[:space:]]*"[^"]*"' | head -n1 | cut -d'"' -f4)
+[ -n "$TAG" ] || abort "releases/latest answered but no tag found"
+echo "strata: resolving ${TAG}"
 
-echo "strata: resolving $TAG -> $ASSET_URL"
+ASSETS=$(printf '%s\n' "$BODY" | grep -o '"browser_download_url":[[:space:]]*"[^"]*"' | cut -d'"' -f4)
+[ -n "$ASSETS" ] || abort "release carries no assets"
+echo "strata: inventory:"
+printf '%s\n' "$ASSETS" | sed 's/^/strata:   - /'
 
-# --- download ----------------------------------------------------------------
-TMP=$(mktemp -d)
-curl -fsSL -o "$TMP/strata.asset" "$ASSET_URL"
+# ---------- candidate: x86_64 family; symbols/metadata excluded (.debug!) ----------
+X86=$(printf '%s\n' "$ASSETS" \
+      | grep -Ei '(x86_64|amd64)' \
+      | grep -Eiv '\.(debug|sha256|sha512|sig|asc|json|sbom|pem|txt|md)$') || true
+[ -n "$X86" ] || abort "no usable x86_64 assets after exclusions (see inventory)"
 
-# --- digest verification (when upstream publishes a sidecar) -----------------
-SIDE_URL="${ASSET_URL}.sha256"
-if curl -fsSL -o "$TMP/side.sha256" "$SIDE_URL" 2>/dev/null; then
-  (cd "$TMP" && \
-   sha256sum strata.asset | awk '{print $1}' | \
-   grep -qx "$(awk '{print $1}' side.sha256)" && \
-   echo "strata $TAG: sidecar digest OK") || { echo "strata: digest mismatch"; exit 1; }
+TMP="$(mktemp -d /tmp/strata.XXXXXX)"
+
+ASSET=$(printf '%s\n' "$X86" | grep -Ei '\.(tar\.zst|tar\.xz|tar\.gz|tgz|tar\.bz2|tar)$' | head -n1 || true)
+[ -n "$ASSET" ] || ASSET=$(printf '%s\n' "$X86" | grep -Ei '\.deb$' | head -n1 || true)
+[ -n "$ASSET" ] || ASSET=$(printf '%s\n' "$X86" | head -n1)
+[ -n "$ASSET" ] || abort "nothing selectable (see inventory)"
+echo "strata: selected $ASSET"
+
+# ---------- trust lane: sha256 sidecar if published (installer's written proof) ------
+curl -fsSL --retry 3 -o "$TMP/artifact" "$ASSET" || abort "download failed: $ASSET"
+if curl -fsSL --retry 3 -o "$TMP/artifact.sha256" "${ASSET}.sha256" 2>/dev/null; then
+  ( cd "$TMP" && sha256sum -c artifact.sha256 >/dev/null ) \
+    || abort "sidecar digest MISMATCH — refusing mystery bytes"
+  echo "strata: sidecar digest OK"
 else
-  echo "strata $TAG: no sidecar digest published by upstream — skipping check"
+  echo "strata: no sidecar published — proceeding, but the gap is NAMED"
 fi
 
-# --- extract (ar: binutils, ships in base) -----------------------------------
-case "$ASSET_URL" in
-  *.tar.gz|*.tgz|*.tar.xz)
-    tar -xf "$TMP/strata.asset" -C "$TMP"
-    install -m755 "$TMP"/*strata* /usr/bin/strata 2>/dev/null ||
-      install -m755 "$TMP/usr/bin/strata" /usr/bin/strata
-    ;;
-  *.deb)
-    ar p "$TMP/strata.asset" data.tar.* | tar -xz -C "$TMP"
-    install -m755 "$TMP/usr/bin/strata" /usr/bin/strata
-    ;;
-  *) echo "strata: unknown asset format: $ASSET_URL"; exit 1 ;;
+# ---------- extraction (tar family / deb / plain) ------------------------------------
+case "$ASSET" in
+  *.tar*) tar -xf "$TMP/artifact" -C "$TMP" ;;
+  *.deb)  if command -v dpkg-deb >/dev/null 2>&1; then
+            mkdir -p "$TMP/x" && dpkg-deb -x "$TMP/artifact" "$TMP/x"
+          else
+            mkdir -p "$TMP/x" && ( cd "$TMP/x" && ar x "$TMP/artifact" && tar -xf data.tar.* )
+          fi ;;
+  *)      cp "$TMP/artifact" "$TMP/strata"; chmod 0755 "$TMP/strata" ;;
 esac
 
-# --- furniture: desktop entry + FileManager1 D-Bus activation ----------------
-# whatever the archive ships gets installed; -print writes receipts into the
-# build log so we never install naming on faith
-find "$TMP" -name '*.desktop'              -exec install -Dm644 {} /usr/share/applications/    \; -print
-find "$TMP" -name '*FileManager1*.service' -exec install -Dm644 {} /usr/share/dbus-1/services/ \; -print
+# ---------- furniture receipts: what actually shipped inside --------------------------
+echo "strata: furniture:"
+find "$TMP" -maxdepth 3 \( -iname '*.desktop' -o -ipath '*dbus*' -o -iname '*strata*' \) -print \
+  | sed 's/^/strata:   /'
 
-# --- receipt baked into the image ---------------------------------------------
-mkdir -p /usr/share/doc/strata
-printf 'channel=latest\ntag=%s\nasset=%s\n' "$TAG" "$ASSET_URL" > /usr/share/doc/strata/BUILD_INFO
+BINPATH=$(find "$TMP" -type f -name 'strata*' ! -name '*.debug' ! -name '*.sha256' | head -n1 || true)
+[ -n "$BINPATH" ] || BINPATH=$(find "$TMP" -type f -perm -u+x ! -name '*.sha256' | head -n1 || true)
+[ -n "$BINPATH" ] || abort "no executable found in archive (see furniture)"
 
+install -d -m 0755 "${PREF}/bin" "$DOC"
+install -m 0755 "$BINPATH" "$BIN"
+echo "strata: rehomed $BIN"
+sha256sum "$BIN" | sed 's/^/strata:   /'
+
+# ---------- BUILD_INFO: the receipt card (tag + UTC build date) -----------------------
+printf 'TAG=%s\nBUILD_DATE=%s\n' "$TAG" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" > "$DOC/BUILD_INFO"
+cp /etc/os-release "$DOC/os-release"
 rm -rf "$TMP"
-echo "strata $TAG: installed"
+echo "strata: done"
