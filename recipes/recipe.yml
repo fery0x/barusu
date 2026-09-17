@@ -44,10 +44,10 @@ modules:
   # CLI lane — the TOOL only; apps are your call at runtime
   - type: brew
 
-  # GUI lane — Flathub enabled, nothing prechosen
+  # GUI lane — Flathub (default repo), system scope, NOTHING prechosen
   - type: default-flatpaks
-    notify: false
-    remove: []
-    install: []
+    configurations:
+      - notify: false
+        scope: system
 
   - type: signing
