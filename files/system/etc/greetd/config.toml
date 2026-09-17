@@ -1,0 +1,10 @@
+# barusu :: greetd — agreety interim (official Fedora package)
+# Upgrade path (pre-made decision): noctalia-greeter when upstream packaging
+# has a release to pin — until then, the gate stays boring and universal.
+
+[terminal]
+vt = 7
+
+[default_session]
+command = "agreety --cmd niri-session"
+user = "greeter"

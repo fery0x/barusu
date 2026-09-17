@@ -1,0 +1,4 @@
+# barusu :: strata is the sole file manager — GUI surface
+# /etc/xdg = system-wide defaults, resolved on first lookup
+[Default Applications]
+inode/directory=io.github.lgse.Strata.desktop

@@ -1,0 +1,22 @@
+# ⚠️ DORMANT — intentionally NOT referenced by recipes/recipe.yml
+#
+# Include ONLY when a needed package exists here and nowhere in official Fedora.
+# The day that happens, the decision is already made — no debate, no compromise.
+#
+# How to activate:
+#   1. Uncomment the block below
+#   2. Add to recipe.yml modules:
+#        - from-file: includes/terra.yml
+#
+# Real-talk triggers that would justify this (each one named at the time):
+#   - a package we need exists ONLY in terra
+#   - never: "same package, newer number" — that's not a reason, that's an itch
+#
+# blocks:
+#   - type: dnf
+#     repos:
+#       custom:
+#         - name: terra
+#           url: https://cdn.fyralabs.com/terra/f47/texture.io.fyralabs.com/
+#           gpgcheck: true
+#           enabled: false      # start disabled even when included — opt-in per install
