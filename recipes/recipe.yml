@@ -32,7 +32,7 @@ modules:
         - gstreamer1-plugins-good
         - fontconfig
         - libheif
-        - libraw
+        - LibRaw
         - ImageMagick
         # -- plumbing --
         - steam-devices
