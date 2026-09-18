@@ -4,61 +4,12 @@ base-image: ghcr.io/zirconium-dev/zirconium
 image-version: latest
 
 modules:
-  - type: rpm-ostree
-    install:
-      - gtk4
-      - gtksourceview5
-      - poppler-glib
-      - gvfs
-    remove:
-      # confirmed core
-      - tailscale
-      - nautilus
-      - nautilus-extensions
-      - nautilus-python
-      - xdg-terminal-exec-nautilus
-      - gnome-disk-utility
-      # peripherals
-      - input-remapper
-      - libratbag-ratbagd
-      - valent
-      # IME — never used
-      - fcitx5
-      - fcitx5-chinese-addons
-      - fcitx5-chinese-addons-data
-      - fcitx5-configtool
-      - fcitx5-data
-      - fcitx5-gtk
-      - fcitx5-gtk3
-      - fcitx5-gtk4
-      - fcitx5-libs
-      - fcitx5-lua
-      - fcitx5-mozc
-      - fcitx5-qt
-      - fcitx5-qt5
-      - fcitx5-qt6
-      - fcitx5-qt-libfcitx5qt6widgets
-      - fcitx5-qt-libfcitx5qtdbus
-      - fcitx5-qt-qt6gui
-      - fcitx5-rime
-      - libime
-      - libime-data
-      - librime
-      - librime-lua
-      - brise
-      - marisa
-      - opencc
-      - ibus
-      - ibus-gtk3
-      - ibus-setup
-      # CJK fonts (dead weight with IME gone)
-      - google-noto-sans-cjk-vf-fonts
-      - google-noto-serif-cjk-vf-fonts
-      - google-noto-sans-mono-cjk-vf-fonts
-      - default-fonts-cjk
-      - default-fonts-cjk-mono
-      - default-fonts-cjk-sans
-      - default-fonts-cjk-serif
+  # plain dnf surgery — rpm-ostree won't cooperatively run in-container on this base
+  - type: script
+    snippets:
+      - "dnf -y install gtk4 gtksourceview5 poppler-glib gvfs"
+      - "dnf -y remove tailscale nautilus nautilus-extensions nautilus-python xdg-terminal-exec-nautilus gnome-disk-utility input-remapper libratbag-ratbagd valent fcitx5 fcitx5-chinese-addons fcitx5-chinese-addons-data fcitx5-configtool fcitx5-data fcitx5-gtk fcitx5-gtk3 fcitx5-gtk4 fcitx5-libs fcitx5-lua fcitx5-mozc fcitx5-qt fcitx5-qt5 fcitx5-qt6 fcitx5-qt-libfcitx5qt6widgets fcitx5-qt-libfcitx5qtdbus fcitx5-qt-qt6gui fcitx5-rime libime libime-data librime librime-lua brise marisa opencc ibus ibus-gtk3 ibus-setup google-noto-sans-cjk-vf-fonts google-noto-serif-cjk-vf-fonts google-noto-sans-mono-cjk-vf-fonts default-fonts-cjk default-fonts-cjk-mono default-fonts-cjk-sans default-fonts-cjk-serif"
+      - "dnf clean all"
 
   - type: script
     scripts:
