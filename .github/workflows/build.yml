@@ -1,21 +1,44 @@
-name: zirc-mine
-description: Zirconium, minus what I don't use
-base-image: ghcr.io/zirconium-dev/zirconium
-image-version: latest
+name: bluebuild
+on:
+  schedule:
+    - cron:
+        "00 06 * * *" # build at 06:00 UTC every day
+        # (20 minutes after last ublue images start building)
+  push:
+    paths-ignore: # don't rebuild if only documentation has changed
+      - "**.md"
 
-modules:
-  # plain dnf surgery — rpm-ostree won't cooperatively run in-container on this base
-  - type: script
-    snippets:
-      - "dnf -y install gtk4 gtksourceview5 poppler-glib gvfs"
-      - "dnf -y remove tailscale nautilus nautilus-extensions nautilus-python xdg-terminal-exec-nautilus gnome-disk-utility input-remapper libratbag-ratbagd valent fcitx5 fcitx5-chinese-addons fcitx5-chinese-addons-data fcitx5-configtool fcitx5-data fcitx5-gtk fcitx5-gtk3 fcitx5-gtk4 fcitx5-libs fcitx5-lua fcitx5-mozc fcitx5-qt fcitx5-qt5 fcitx5-qt6 fcitx5-qt-libfcitx5qt6widgets fcitx5-qt-libfcitx5qtdbus fcitx5-qt-qt6gui fcitx5-rime libime libime-data librime librime-lua brise marisa opencc ibus ibus-gtk3 ibus-setup google-noto-sans-cjk-vf-fonts google-noto-serif-cjk-vf-fonts google-noto-sans-mono-cjk-vf-fonts default-fonts-cjk default-fonts-cjk-mono default-fonts-cjk-sans default-fonts-cjk-serif"
-      - "dnf clean all"
+  pull_request:
+  workflow_dispatch: # allow manually triggering builds
+concurrency:
+  # only run one build at a time
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+jobs:
+  bluebuild:
+    name: Build Custom Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    strategy:
+      fail-fast: false # stop GH from cancelling all matrix builds if one fails
+      matrix:
+        recipe:
+          # !! Add your recipes here
+          - recipe.yml
+    steps:
+      # the build is fully handled by the reusable github action
+      - name: Build Custom Image
+        uses: blue-build/github-action@v1.13
+        env:
+          BB_RUN_DRIVER: podman
+        with:
+          recipe: ${{ matrix.recipe }}
+          cosign_private_key: ${{ secrets.SIGNING_SECRET }}
+          registry_token: ${{ github.token }}
+          pr_event_number: ${{ github.event.number }}
 
-  - type: script
-    scripts:
-      - strata.sh
-    snippets:
-      # stop the prebundled flatpaks from ever installing again
-      - "systemctl mask flatpak-preinstall.service"
-      # optional: uncomment if you want zero flatpak boot services
-      # - "systemctl mask flatpak-add-flathub-repos.service"
+          # enabled by default, disable if your image is small and you want faster builds
+          maximize_build_space: true
