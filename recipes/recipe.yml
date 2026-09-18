@@ -1,6 +1,6 @@
 name: barusu
 description: Zirconium, minus what I don't use
-base-image: ghcr.io/zirconium-dev/zirconium:latest
+base-image: ghcr.io/zirconium-dev/zirconium
 image-version: latest
 
 modules:
