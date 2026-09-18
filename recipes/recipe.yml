@@ -61,6 +61,8 @@ modules:
       - default-fonts-cjk-serif
 
   - type: script
+    scripts:
+      - strata.sh
     snippets:
       # stop the prebundled flatpaks from ever installing again
       - "systemctl mask flatpak-preinstall.service"
