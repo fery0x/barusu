@@ -1,53 +1,68 @@
 name: barusu
-description: Fery's niri + strata + noctalia atomic image. Barusu!
-base-image: ghcr.io/ublue-os/base-main
+description: Zirconium, minus what I don't use
+base-image: ghcr.io/zirconium-dev/zirconium:latest
 image-version: latest
-modules:
-  - type: files
-    files:
-      - source: system
-        destination: /
 
-  # System layer — 100% official Fedora, zero COPRs, purely additive
-  - type: dnf
+modules:
+  - type: rpm-ostree
     install:
-      packages:
-        # -- session --
-        - niri
-        - noctalia
-        - greetd
-        - foot
-        - pipewire
-        - wireplumber
-        - xdg-desktop-portal-gnome
-        - xdg-desktop-portal-gtk
-        - gnome-keyring
-        # -- strata runtime --
-        - gtk4
-        - gtksourceview5
-        - poppler-glib
-        - gvfs
-        - bubblewrap
-        - gstreamer1-plugins-base
-        - gstreamer1-plugins-good
-        - fontconfig
-        - libheif
-        - LibRaw
-        - ImageMagick
-        # -- plumbing --
-        - steam-devices
+      - gtk4
+      - gtksourceview5
+      - poppler-glib
+      - gvfs
+    remove:
+      # confirmed core
+      - tailscale
+      - nautilus
+      - nautilus-extensions
+      - nautilus-python
+      - xdg-terminal-exec-nautilus
+      - gnome-disk-utility
+      # peripherals
+      - input-remapper
+      - libratbag-ratbagd
+      - valent
+      # IME — never used
+      - fcitx5
+      - fcitx5-chinese-addons
+      - fcitx5-chinese-addons-data
+      - fcitx5-configtool
+      - fcitx5-data
+      - fcitx5-gtk
+      - fcitx5-gtk3
+      - fcitx5-gtk4
+      - fcitx5-libs
+      - fcitx5-lua
+      - fcitx5-mozc
+      - fcitx5-qt
+      - fcitx5-qt5
+      - fcitx5-qt6
+      - fcitx5-qt-libfcitx5qt6widgets
+      - fcitx5-qt-libfcitx5qtdbus
+      - fcitx5-qt-qt6gui
+      - fcitx5-rime
+      - libime
+      - libime-data
+      - librime
+      - librime-lua
+      - brise
+      - marisa
+      - opencc
+      - ibus
+      - ibus-gtk3
+      - ibus-setup
+      # CJK fonts (dead weight with IME gone)
+      - google-noto-sans-cjk-vf-fonts
+      - google-noto-serif-cjk-vf-fonts
+      - google-noto-sans-mono-cjk-vf-fonts
+      - default-fonts-cjk
+      - default-fonts-cjk-mono
+      - default-fonts-cjk-sans
+      - default-fonts-cjk-serif
 
   - type: script
-    scripts:
-      - strata.sh
-
-  # CLI lane — the TOOL only; apps are your call at runtime
-  - type: brew
-
-  # GUI lane — Flathub (default repo), system scope, NOTHING prechosen
-  - type: default-flatpaks
-    configurations:
-      - notify: false
-        scope: system
-
-  - type: signing
+    snippets:
+      # stop the prebundled flatpaks from ever installing again
+      - "systemctl mask flatpak-preinstall.service"
+      # optional: uncomment if you want zero flatpak boot services
+      # - "systemctl mask flatpak-add-flathub-repos.service"
